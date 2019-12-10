@@ -1,5 +1,7 @@
 package ru.skillbranch.kotlinexample
 
+import java.lang.IllegalArgumentException
+
 object UserHolder {
 
     private val map = mutableMapOf<String, User>()
@@ -31,6 +33,17 @@ object UserHolder {
         return map[login.trim().toLowerCase()]?.run {
             if (checkPassword(password)) userInfo
             else null
+        }
+    }
+
+    fun importUsers(list: List<String>): List<User>{
+        list.map { row ->
+            val(fullName: String, email: String?, access: String, phone: String?) = row.split(";")
+            when{
+                !email.isBlank() -> User.makeUser(fullName, email = email, access = access)
+                !phone.isBlank() -> User.makeUser(fullName, phone = phone, access = access)
+                else -> throw IllegalArgumentException("Email or Phone must be not null or blank")
+            }
         }
     }
 

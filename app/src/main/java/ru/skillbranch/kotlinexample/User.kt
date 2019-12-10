@@ -1,7 +1,7 @@
 package ru.skillbranch.kotlinexample
 
 import androidx.annotation.VisibleForTesting
-import ru.skillbranch.kotlinexample.extensions.clearPhoneNumber
+import ru.skillbranch.kotlinexample.extentions.clearPhoneNumber
 import java.lang.IllegalArgumentException
 import java.lang.StringBuilder
 import java.math.BigInteger
@@ -41,8 +41,10 @@ class User private constructor(
         }
         get() = _login!!
 
+
+    private var _salt: String? = null
     private val salt: String by lazy {
-        ByteArray(16).also { SecureRandom().nextBytes(it) }.toString()
+        _salt ?: ByteArray(16).also { SecureRandom().nextBytes(it) }.toString()
     }
 
     private lateinit var passwordHash: String
@@ -61,8 +63,31 @@ class User private constructor(
         passwordHash = getSaltedHash(password)
     }
 
+    //for email and hash
+    constructor(
+        firstName: String,
+        lastName: String?,
+        email: Email,
+        hashAndSalt: Pair<String, String?>
+    ): this(firstName, lastName, email = email.email, meta = mapOf("auth" to "password")){
+        println("Secondary mail and hash constructor")
+        passwordHash = hashAndSalt.first
+        _salt = hashAndSalt.second ?: ""
+    }
 
-    //for email
+    //for phone and hash
+    constructor(
+        firstName: String,
+        lastName: String?,
+        phone: Phone,
+        hashAndSalt: Pair<String, String?>
+    ): this(firstName, lastName, rawPhone = phone.rawPhone, meta = mapOf("auth" to "password")){
+        println("Secondary phone and hash constructor")
+        passwordHash = hashAndSalt.first
+        _salt = hashAndSalt.second ?: ""
+    }
+
+    //for phone
     constructor(
         firstName: String,
         lastName: String?,
@@ -139,15 +164,23 @@ class User private constructor(
             fullName: String,
             email: String? = null,
             password: String? = null,
-            phone: String? = null
+            phone: String? = null,
+            access: String? = null
         ):User{
             val (firstName, lastName) = fullName.fullNameToPair()
 
             return when{
                 !phone.isNullOrBlank() -> User(firstName, lastName, phone)
                 !email.isNullOrBlank() && !password.isNullOrBlank() -> User(firstName, lastName, email, password)
+                !email.isNullOrBlank() && !access.isNullOrBlank() -> User(firstName, lastName, Email(email), access.accessToPair())
+                !phone.isNullOrBlank() && !access.isNullOrBlank() -> User(firstName, lastName, Phone(phone), access.accessToPair())
                 else -> throw IllegalArgumentException("Email or Phone must be not null or blank")
             }
+        }
+
+        enum class authType{
+            SMS,
+            PASSWORD
         }
 
         private fun String.fullNameToPair(): Pair<String, String?> {
@@ -161,7 +194,30 @@ class User private constructor(
                 }
             }
         }
+
+        /*
+        * get hash and salt from string
+        *
+        * returns pair of hash and salt
+        */
+        private fun String.accessToPair(): Pair<String, String?> {
+            return split(":")
+                .filter { it.isNotBlank() }
+                .run {
+                    when (size) {
+                        1 -> first() to null
+                        2 -> last() to first()
+                        else -> throw IllegalArgumentException(
+                            "Access must contain first name " +
+                                    "and last name, current split result ${this@accessToPair}"
+                        )
+                    }
+                }
+        }
     }
 
+    class Phone (val rawPhone: String)
+
+    class Email (val email: String)
 }
 
