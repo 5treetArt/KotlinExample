@@ -18,7 +18,6 @@ object UserHolder {
             .also { user -> map[user.login] = user}
     }
 
-
     fun registerUserByPhone(
         fullName: String,
         rawPhone: String
@@ -36,16 +35,11 @@ object UserHolder {
         }
     }
 
-    fun importUsers(list: List<String>): List<User>{
-        list.map { row ->
-            val(fullName: String, email: String?, access: String, phone: String?) = row.split(";")
-            when{
-                !email.isBlank() -> User.makeUser(fullName, email = email, access = access)
-                !phone.isBlank() -> User.makeUser(fullName, phone = phone, access = access)
-                else -> throw IllegalArgumentException("Email or Phone must be not null or blank")
-            }
+    fun importUsers(list: List<String>): List<User> =
+        list.mapNotNull { row ->
+            val (fullName: String, email: String, access: String, phone: String) = row.split(";")
+            registerImportedUser(fullName, email, phone, access)
         }
-    }
 
     fun requestAccessCode(login: String) {
         check(map.keys.contains(login)) {"User must be registered"}
@@ -54,6 +48,40 @@ object UserHolder {
 
     fun clearData() {
         map.clear()
+    }
+
+    private fun registerImportedUser(
+        fullName: String,
+        email: String,
+        phone: String,
+        access: String
+    ): User?{
+        return when {
+            !email.isBlank() -> registerImportedUserByEmail(fullName, email, access)
+            !phone.isBlank() -> registerImportedUserByPhone(fullName, phone, access)
+            else -> null//throw IllegalArgumentException("Email or Phone must be not null or blank")
+        }
+    }
+
+    private fun registerImportedUserByEmail(
+        fullName: String,
+        email: String,
+        access: String
+    ): User{
+        return User.makeUser(fullName, email = email, access = access)
+            .also { require(isLoginUnique(it.login)) { "A user with this email already exists"} }
+            .also { user -> map[user.login] = user}
+    }
+
+    private fun registerImportedUserByPhone(
+        fullName: String,
+        rawPhone: String,
+        access: String
+    ): User{
+        return User.makeUser(fullName, phone = rawPhone, access = access)
+            .also { require(isPhoneCorrect(it.login)) { "Enter a valid phone number starting with a + and containing 11 digits" } }
+            .also { require(isLoginUnique(rawPhone)) { "A user with this phone already exists"} }
+            .also { user -> map[rawPhone] = user}
     }
 
     private fun isLoginUnique(login: String): Boolean = !map.keys.contains(login)

@@ -69,7 +69,7 @@ class User private constructor(
         lastName: String?,
         email: Email,
         hashAndSalt: Pair<String, String?>
-    ): this(firstName, lastName, email = email.email, meta = mapOf("auth" to "password")){
+    ): this(firstName, lastName, email = email.email, meta = mapOf("src" to "csv")){
         println("Secondary mail and hash constructor")
         passwordHash = hashAndSalt.first
         _salt = hashAndSalt.second ?: ""
@@ -81,7 +81,7 @@ class User private constructor(
         lastName: String?,
         phone: Phone,
         hashAndSalt: Pair<String, String?>
-    ): this(firstName, lastName, rawPhone = phone.rawPhone, meta = mapOf("auth" to "password")){
+    ): this(firstName, lastName, rawPhone = phone.rawPhone, meta = mapOf("src" to "csv")){
         println("Secondary phone and hash constructor")
         passwordHash = hashAndSalt.first
         _salt = hashAndSalt.second ?: ""
