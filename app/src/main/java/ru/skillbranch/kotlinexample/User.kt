@@ -170,10 +170,14 @@ class User private constructor(
             val (firstName, lastName) = fullName.fullNameToPair()
 
             return when{
-                !phone.isNullOrBlank() -> User(firstName, lastName, phone)
-                !email.isNullOrBlank() && !password.isNullOrBlank() -> User(firstName, lastName, email, password)
-                !email.isNullOrBlank() && !access.isNullOrBlank() -> User(firstName, lastName, Email(email), access.accessToPair())
-                !phone.isNullOrBlank() && !access.isNullOrBlank() -> User(firstName, lastName, Phone(phone), access.accessToPair())
+                !phone.isNullOrBlank() && access.isNullOrBlank() ->
+                    User(firstName, lastName, phone)
+                !email.isNullOrBlank() && !password.isNullOrBlank() && access.isNullOrBlank() ->
+                    User(firstName, lastName, email, password)
+                !email.isNullOrBlank() && !access.isNullOrBlank() ->
+                    User(firstName, lastName, Email(email), access.accessToPair())
+                !phone.isNullOrBlank() && !access.isNullOrBlank() ->
+                    User(firstName, lastName, Phone(phone), access.accessToPair())
                 else -> throw IllegalArgumentException("Email or Phone must be not null or blank")
             }
         }
